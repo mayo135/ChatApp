@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Chat Stream</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/static/style.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+
+    <div class="chat-container">
+        <header class="chat-header">
+            <h1>Global Feed</h1>
+        </header>
+        
+        <main id="messages-area"></main>
+
+        <div id="typing-display"></div>
+
+        <section class="input-area">
+            <form id="chat-form">
+                <div class="input-row">
+                    <input type="text" id="name-input" placeholder="名前" maxlength="10">
+                    <input type="text" id="message-input" placeholder="メッセージを入力..." required>
+                    <button type="submit">SEND</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <script>
+        const socket = io();
+        const area = document.getElementById('messages-area');
+        const typingArea = document.getElementById('typing-display');
+        const nameInput = document.getElementById('name-input');
+        const msgInput = document.getElementById('message-input');
+
+        // 1. 接続 & 初期読み込み
+        socket.on('connect', () => socket.emit('load messages'));
+
+        socket.on('load all messages', (msgs) => {
+            area.innerHTML = '';
+            msgs.forEach(data => addMessage(data));
+        });
+
+        socket.on('load one message', (data) => {
+            addMessage(data);
+        });
+
+        // 2. メッセージ送信
+        document.getElementById('chat-form').onsubmit = (e) => {
+            e.preventDefault();
+            const name = nameInput.value || 'Guest';
+            socket.emit('send message', { name: name, message: msgInput.value });
+            msgInput.value = '';
+            // 送信したら入力中を解除
+            socket.emit('typing', { name: name, is_typing: false });
+        };
+
+        // 3. 【追加】入力中機能のロジック
+        let typingTimer;
+        msgInput.addEventListener('input', () => {
+            const name = nameInput.value || 'Guest';
+            socket.emit('typing', { name: name, is_typing: true });
+
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(() => {
+                socket.emit('typing', { name: name, is_typing: false });
+            }, 2000); // 2秒間入力がなければ停止
+        });
+
+        socket.on('display typing', (data) => {
+            typingArea.textContent = data.is_typing ? `${data.name} が入力中...` : '';
+        });
+
+        // 4. 【更新】メッセージ追加（自分かどうかの判定）
+        function addMessage(data) {
+            const container = document.createElement('div');
+            container.className = 'msg-container';
+
+            // 入力欄の名前とメッセージの送信者が同じならクラスを追加
+            const currentUserName = nameInput.value || 'Guest';
+            if (data.name === currentUserName) {
+                container.classList.add('my-message');
+            }
+
+            container.innerHTML = `
+                <div class="msg-info">
+                    <span class="user-name">${escapeHtml(data.name)}</span>
+                    <span class="time">${data.time}</span>
+                </div>
+                <div class="msg-bubble">${escapeHtml(data.message)}</div>
+            `;
+
+            area.appendChild(container);
+            area.scrollTop = area.scrollHeight;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+        }
+    </script>
