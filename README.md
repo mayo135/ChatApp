@@ -5,6 +5,9 @@ Markdown
 
 MongoDB と Socket.io を活用した、リアルタイムでメッセージの送受信ができるチャットアプリケーションです。
 
+<img width="960" height="550" alt="image" src="https://github.com/user-attachments/assets/033f1bc1-5606-4180-9a91-1fc9a102af70" />
+
+
 ## ✨ 主な機能
 - **リアルタイム通信**: Socket.io により、リロードなしで即座にメッセージが届きます。
 - **メッセージ永続化**: MongoDB (Atlas) を使用し、過去のチャット履歴を保存します。
