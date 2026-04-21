@@ -20,8 +20,8 @@ db = client["SNS"]
 messages_collection = db["messages"]
 
 #メッセージ全削除
-result = messages_collection.delete_many({})
-print(f"{result.deleted_count} 件のメッセージを削除しました。")
+#result = messages_collection.delete_many({})
+#print(f"{result.deleted_count} 件のメッセージを削除しました。")
 
 @app.route("/")
 def index():
